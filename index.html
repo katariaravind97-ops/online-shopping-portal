@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090d18">
+    <meta name="description" content="Shop shirts, trousers, watches, shoes, bags and everyday accessories at AR Market.">
+    <title>AR Market — Style for every day</title>
+    <script src="auth-guard.js"></script>
+    <link rel="preconnect" href="https://images.unsplash.com">
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body class="home-page">
+    <div class="home-background" aria-hidden="true">
+      <div class="home-ambient-light"></div>
+      <div class="home-particles">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+    </div>
+    <div class="top-strip"><span>Style for every day</span><span>Easy finds · Thoughtful details · Your kind of look</span></div>
+    <header class="site-header">
+      <a class="brand" href="#home" aria-label="AR Market home"><span class="brand-mark">AR</span><span class="brand-label">market</span></a>
+      <form class="search-bar" id="search-form" role="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg>
+        <input id="global-search" type="search" placeholder="Search shirts, watches, bags and more" autocomplete="off" aria-label="Search products">
+        <button type="submit">Search</button>
+        <div class="suggestions" id="suggestions" hidden></div>
+      </form>
+      <div class="header-actions">
+        <button class="wishlist-open" id="wishlist-open" type="button" aria-label="Show wishlist">♡ <span>Wishlist</span> <b id="wishlist-count">0</b></button>
+        <a class="orders-button" href="orders.html">My orders</a>
+        <a class="account-button" href="login.html">Sign in</a>
+        <button class="cart-button" id="cart-open" type="button" aria-label="Open shopping cart"><span aria-hidden="true">▱</span> Cart <b class="cart-count" aria-live="polite">0</b></button>
+      </div>
+    </header>
+
+    <nav class="category-nav" aria-label="Shop departments">
+      <div class="category-nav-inner">
+        <button class="nav-tab is-active" data-category="All" type="button">All styles</button>
+        <button class="nav-tab" data-category="Shirts" type="button">Shirts & tops</button>
+        <button class="nav-tab" data-category="Pants" type="button">Pants & jeans</button>
+        <button class="nav-tab" data-category="Watches" type="button">Watches</button>
+        <button class="nav-tab" data-category="Shoes" type="button">Shoes</button>
+        <button class="nav-tab" data-category="Bags" type="button">Bags</button>
+        <button class="nav-tab" data-category="Accessories" type="button">Accessories</button>
+      </div>
+    </nav>
+
+    <main id="home">
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="hero-kicker">THE EVERYDAY STYLE EDIT</span>
+          <h1>Wear what<br>feels <em>like you.</em></h1>
+          <p>Easy layers, dependable favourites and the little details that pull it all together.</p>
+          <button class="primary-button" id="shop-now" type="button">Shop the collection <span>→</span></button>
+          <div class="hero-perks"><span>✓ Clothing</span><span>✓ Watches</span><span>✓ Bags & accessories</span></div>
+        </div>
+        <div class="hero-art">
+          <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1400&q=85" alt="Friends exploring a contemporary clothing collection">
+          <div class="hero-note"><span>AR STYLE NOTES</span><strong>Good looks.<br>No overthinking.</strong><small>Pieces for your everyday.</small></div>
+          <span class="hero-sticker" aria-hidden="true">MADE<br>TO MOVE</span>
+        </div>
+      </section>
+
+      <section class="category-shortcuts content-wrap" aria-label="Shop by category">
+        <button class="shortcut" data-category="Shirts" type="button"><span class="shortcut-icon icon-shirt">▤</span><strong>Shirts & tops</strong><small>Easy everyday layers</small></button>
+        <button class="shortcut" data-category="Pants" type="button"><span class="shortcut-icon icon-pants">▥</span><strong>Pants & jeans</strong><small>Find your fit</small></button>
+        <button class="shortcut" data-category="Watches" type="button"><span class="shortcut-icon icon-watch">◷</span><strong>Watches</strong><small>Time, well spent</small></button>
+        <button class="shortcut" data-category="Shoes" type="button"><span class="shortcut-icon icon-shoes">⌁</span><strong>Shoes</strong><small>Made for going places</small></button>
+        <button class="shortcut" data-category="Bags" type="button"><span class="shortcut-icon icon-bag">▱</span><strong>Bags</strong><small>Carry your day</small></button>
+        <button class="shortcut" data-category="Accessories" type="button"><span class="shortcut-icon icon-accessories">◇</span><strong>Accessories</strong><small>Little finishing touches</small></button>
+      </section>
+
+      <section class="content-wrap product-section" id="shop">
+        <div class="section-title">
+          <div><span class="section-kicker">GOOD PICKS, RIGHT NOW</span><h2 id="listing-title">Shop the collection<span>.</span></h2><p class="section-subtitle" id="listing-subtitle">Clothing, watches and accessories chosen for everyday wear.</p></div>
+          <span class="items-count" id="items-count"></span>
+        </div>
+        <div class="filter-row">
+          <div class="filter-chips" id="filters">
+            <button class="filter-chip is-selected" data-category="All" type="button">All products</button>
+            <button class="filter-chip" data-category="Shirts" type="button">Shirts</button>
+            <button class="filter-chip" data-category="Pants" type="button">Pants</button>
+            <button class="filter-chip" data-category="Watches" type="button">Watches</button>
+            <button class="filter-chip" data-category="Shoes" type="button">Shoes</button>
+            <button class="filter-chip" data-category="Bags" type="button">Bags</button>
+            <button class="filter-chip" data-category="Accessories" type="button">Accessories</button>
+            <button class="filter-chip" data-category="Wishlist" type="button">♡ Wishlist</button>
+          </div>
+          <label class="sort-control">Sort by
+            <select id="sort-products" aria-label="Sort products"><option value="popular">Recommended</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="rating">Top rated</option></select>
+          </label>
+        </div>
+        <div class="product-grid" id="product-grid" aria-live="polite"></div>
+        <p class="empty-state" id="empty-state" hidden>No products match that search. Try another category or search term.</p>
+      </section>
+
+      <section class="style-banner content-wrap">
+        <div><span class="section-kicker">THE LITTLE THINGS MAKE THE LOOK</span><h2>Finish it<br><em>your way.</em></h2><p>Watches, bags, belts and everyday extras—find the detail that feels like you.</p><button class="light-button" data-category="Accessories" type="button">Shop accessories <span>→</span></button></div>
+        <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=900&q=85" alt="Thoughtfully styled clothing and accessories">
+        <span class="banner-label">A LITTLE MORE YOU</span>
+      </section>
+    </main>
+
+    <section class="newsletter content-wrap"><div><span class="section-kicker">A NOTE FROM AR</span><h2>New finds, now and then.</h2><p>Fresh styles and a few good things worth knowing about.</p></div><form id="newsletter-form"><label class="sr-only" for="email">Your email address</label><input id="email" type="email" placeholder="Your email address" required><button type="submit">Join the list <span>→</span></button><p class="form-message" id="form-message" aria-live="polite"></p></form></section>
+
+    <footer class="site-footer"><a class="brand" href="#home" aria-label="AR Market home"><span class="brand-mark">AR</span><span class="brand-label">market</span></a><p>Find your everyday style.</p><div class="footer-links"><a href="#home">About AR</a><a href="#shop">Shop</a><button type="button" data-notice="Customer support needs a connected backend.">Contact</button></div><small>© 2026 AR Market · Demo storefront</small></footer>
+
+    <nav class="mobile-nav" aria-label="Quick navigation"><button data-category="All" type="button"><span>⌂</span>Shop</button><button data-category="Shirts" type="button"><span>▤</span>Clothing</button><button data-category="Watches" type="button"><span>◷</span>Watches</button><button data-category="Wishlist" type="button"><span>♡</span>Wishlist</button><button id="mobile-cart-open" type="button"><span>▱</span>Cart <b class="cart-count">0</b></button></nav>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="backdrop" id="backdrop"></div>
+    <aside class="cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title" aria-hidden="true">
+      <div class="drawer-header"><div><span class="section-kicker">YOUR AR PICKS</span><h2 id="cart-title">Shopping cart <span class="drawer-count">(0)</span></h2></div><button class="close-drawer" type="button" aria-label="Close cart">×</button></div>
+      <div class="cart-content" id="cart-items"></div>
+      <form class="coupon-form" id="coupon-form"><label for="coupon">Coupon code</label><div><input id="coupon" placeholder="Try ARSTYLE10" autocomplete="off"><button type="submit">Apply</button></div><small class="coupon-message" id="coupon-message" aria-live="polite">Demo offer: ARSTYLE10 · 10% off items</small></form>
+      <div class="cart-footer"><div class="cart-total-line"><span>Subtotal</span><span id="cart-subtotal">₹0</span></div><div class="cart-total-line discount-line" id="discount-row" hidden><span>Coupon savings</span><span id="cart-discount">−₹0</span></div><div class="cart-total-line grand-total"><strong>Total</strong><strong id="cart-total">₹0</strong></div><p class="checkout-note">Demo checkout only. No payment will be collected.</p><button class="checkout-button" id="checkout-button" type="button">Continue to checkout <span>→</span></button></div>
+    </aside>
+
+    <dialog class="checkout-dialog" id="checkout-dialog" aria-labelledby="checkout-title">
+      <div class="checkout-header">
+        <div><span class="section-kicker">AR MARKET · DEMO CHECKOUT</span><h2 id="checkout-title">Checkout</h2></div>
+        <button class="close-drawer" id="checkout-close" type="button" aria-label="Close checkout">×</button>
+      </div>
+      <ol class="checkout-progress" aria-label="Checkout progress">
+        <li data-progress-step="details" aria-current="step"><span>1</span>Delivery</li>
+        <li data-progress-step="review"><span>2</span>Review</li>
+        <li data-progress-step="complete"><span>3</span>Complete</li>
+      </ol>
+      <section class="checkout-step" data-checkout-step="details" aria-labelledby="delivery-title">
+        <h3 id="delivery-title">Where should we deliver?</h3>
+        <p class="checkout-step-note">Enter your delivery details to review your demo order.</p>
+        <form class="checkout-address-form" id="checkout-address-form">
+          <label>Full name<input name="name" autocomplete="name" required maxlength="100"></label>
+          <div class="checkout-field-row">
+            <label>Email address<input name="email" type="email" autocomplete="email" required maxlength="254"></label>
+            <label>Phone number<input name="phone" type="tel" autocomplete="tel" minlength="7" maxlength="20" title="Enter a phone number between 7 and 20 characters." required></label>
+          </div>
+          <label>Street address<input name="street" autocomplete="street-address" required maxlength="160"></label>
+          <div class="checkout-field-row checkout-location-row">
+            <label>City<input name="city" autocomplete="address-level2" required maxlength="80"></label>
+            <label>State<input name="region" autocomplete="address-level1" required maxlength="80"></label>
+            <label>PIN code<input name="postal" autocomplete="postal-code" inputmode="numeric" pattern="[0-9]{6}" title="Enter a 6-digit PIN code." required></label>
+          </div>
+          <button class="checkout-button checkout-next" type="submit">Review your order <span>→</span></button>
+        </form>
+      </section>
+      <section class="checkout-step" data-checkout-step="review" aria-labelledby="review-title" hidden>
+        <h3 id="review-title">Review your order</h3>
+        <p class="checkout-step-note">Check your items and delivery details before placing this demo order.</p>
+        <div id="checkout-review"></div>
+        <p class="checkout-demo-note">Demo only: placing this order does not process a payment or create a real shipment.</p>
+        <p class="checkout-order-error" id="checkout-order-error" role="alert" hidden></p>
+        <div class="checkout-actions">
+          <button class="checkout-back" id="checkout-back" type="button">← Edit delivery</button>
+          <button class="checkout-button checkout-place" id="checkout-place" type="button">Place demo order <span>→</span></button>
+        </div>
+      </section>
+      <section class="checkout-step checkout-complete" data-checkout-step="complete" aria-labelledby="complete-title" hidden>
+        <span class="checkout-complete-mark" aria-hidden="true">✓</span>
+        <span class="section-kicker">DEMO ORDER CONFIRMED</span>
+        <h3 id="complete-title">Your order is placed!</h3>
+        <p id="checkout-confirmation"></p>
+        <p class="checkout-demo-note">This confirmation is for the storefront demo. No payment was collected and no real order was sent.</p>
+        <a class="checkout-orders-link" href="orders.html">View my orders <span>→</span></a>
+        <button class="checkout-button checkout-done" id="checkout-done" type="button">Back to shopping <span>→</span></button>
+      </section>
+    </dialog>
+
+  </body>
+</html>

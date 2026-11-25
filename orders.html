@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f6f4ee">
+    <meta name="description" content="Review your AR Market demo order history.">
+    <title>My orders — AR Market</title>
+    <script src="auth-guard.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script src="orders.js" defer></script>
+  </head>
+  <body class="orders-page">
+    <header class="orders-header">
+      <a class="brand" href="index.html" aria-label="AR Market home"><span class="brand-mark">AR</span><span class="brand-label">market</span></a>
+      <nav class="orders-nav" aria-label="Account navigation">
+        <a href="index.html">Continue shopping</a>
+        <a href="login.html">Sign in</a>
+      </nav>
+    </header>
+    <main class="orders-main">
+      <div class="orders-title-row">
+        <div>
+          <span class="section-kicker">YOUR ORDER HISTORY</span>
+          <h1>My orders<span>.</span></h1>
+          <p id="orders-summary">Your demo orders are saved in this browser.</p>
+        </div>
+        <a class="orders-shop-button" href="index.html#shop">Continue shopping <span>→</span></a>
+      </div>
+      <p class="orders-demo-note">Demo order history is stored only in this browser. No real payment or shipment is involved, and delivery details are not saved here.</p>
+      <p class="orders-error" id="orders-error" role="alert" hidden></p>
+      <section class="orders-list" id="orders-list" aria-label="Your orders"></section>
+      <section class="orders-empty" id="orders-empty" aria-labelledby="orders-empty-title" hidden>
+        <span class="orders-empty-mark" aria-hidden="true">▱</span>
+        <h2 id="orders-empty-title">No orders yet</h2>
+        <p>Once you place a demo order, it will appear here.</p>
+        <a href="index.html#shop">Explore the collection →</a>
+      </section>
+    </main>
+    <footer class="orders-footer"><p>© 2026 AR Market · Demo storefront</p></footer>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f6f4ee">
+    <meta name="description" content="Explore product details at AR Market.">
+    <title>Product details — AR Market</title>
+    <script src="auth-guard.js"></script>
+    <link rel="preconnect" href="https://images.unsplash.com">
+    <link rel="stylesheet" href="styles.css">
+    <script src="product.js" defer></script>
+  </head>
+  <body class="product-page">
+    <header class="product-detail-header">
+      <a class="brand" href="index.html" aria-label="AR Market home"><span class="brand-mark">AR</span><span class="brand-label">market</span></a>
+      <a class="product-back-link" href="index.html#shop"><span aria-hidden="true">←</span> Back to the collection</a>
+    </header>
+    <main class="product-detail-main">
+      <div class="product-detail-layout" id="product-content" hidden></div>
+      <section class="product-unavailable" id="product-unavailable" role="status" hidden>
+        <span class="section-kicker">PRODUCT NOT AVAILABLE</span>
+        <h1>We couldn't open that product.</h1>
+        <p>Return to the collection and choose a product to see its details.</p>
+        <a class="primary-button" href="index.html#shop">Browse the collection <span>→</span></a>
+      </section>
+    </main>
+  </body>
+</html>
