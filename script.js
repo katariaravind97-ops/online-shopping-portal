@@ -105,6 +105,28 @@ collectionExtensions.forEach((collection, collectionIndex) => {
   });
 });
 
+const illustrativeAngleLabels = [
+  'Front angle · illustrative',
+  'Back angle · illustrative',
+  'Side angle · illustrative'
+];
+
+products.forEach((product) => {
+  const categoryProducts = products.filter((item) => item.category === product.category);
+  const productIndex = categoryProducts.findIndex((item) => item.id === product.id);
+  product.galleryImages = [
+    { src: product.image, alt: product.alt, label: 'Selected product photo' },
+    ...illustrativeAngleLabels.map((label, index) => {
+      const reference = categoryProducts[(productIndex + index + 1) % categoryProducts.length];
+      return {
+        src: reference.image,
+        alt: `Illustrative ${reference.category.toLowerCase()} reference; not the selected product`,
+        label
+      };
+    })
+  ];
+});
+
 const categories = ['All', 'Shirts', 'Pants', 'Watches', 'Shoes', 'Bags', 'Accessories', 'Wishlist'];
 const state = {
   category: 'All',
@@ -118,6 +140,19 @@ const state = {
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const money = (amount) => `₹${Math.round(amount).toLocaleString('en-IN')}`;
+const sizePriceStep = 100;
+
+function getSizePrice(product, size) {
+  return product.price + Math.max(0, product.sizes.indexOf(size)) * sizePriceStep;
+}
+
+function productDetailHref(product, relatedProducts) {
+  const query = new URLSearchParams({
+    product: JSON.stringify(product),
+    related: JSON.stringify(relatedProducts)
+  });
+  return `product.html?${query}`;
+}
 
 function readStorage(key, fallback) {
   try {
@@ -191,7 +226,10 @@ function renderProducts() {
 function productCard(product) {
   const favorite = state.favorites.has(product.id);
   const discount = Math.max(0, Math.round((1 - product.price / product.originalPrice) * 100));
-  const productHref = `product.html?product=${encodeURIComponent(JSON.stringify(product))}`;
+  const relatedProducts = products
+    .filter((item) => item.category === product.category && item.id !== product.id)
+    .slice(0, 8);
+  const productHref = productDetailHref(product, relatedProducts);
   return `
     <article class="product-card">
       <div class="product-image">
@@ -247,14 +285,15 @@ function renderCart() {
   $('#cart-items').innerHTML = state.cart.length
     ? state.cart.map((entry, index) => {
       const product = products.find((item) => item.id === entry.id);
+      const unitPrice = getSizePrice(product, entry.size);
       return `
         <article class="cart-item">
           <img src="${product.image}" alt="${escapeHtml(product.alt)}">
-          <div><h3 class="cart-item-name">${escapeHtml(product.name)}</h3><span class="cart-item-price">${money(product.price)}</span>
+          <div><h3 class="cart-item-name">${escapeHtml(product.name)}</h3><span class="cart-item-price">${money(unitPrice)}</span>
             <p class="cart-variant">${escapeHtml(entry.color)} · Size ${escapeHtml(entry.size)}</p>
             <div class="quantity-control"><button type="button" data-quantity="${index}" data-change="-1" aria-label="Decrease quantity">−</button><span>${entry.quantity}</span><button type="button" data-quantity="${index}" data-change="1" aria-label="Increase quantity">+</button></div>
           </div><button class="remove-item" type="button" data-remove="${index}">Remove</button>
-          <span class="cart-item-total">Line total: ${money(product.price * entry.quantity)}</span>
+          <span class="cart-item-total">Line total: ${money(unitPrice * entry.quantity)}</span>
         </article>`;
     }).join('')
     : '<p class="cart-empty">Your cart is waiting for something good.<br>Browse the collection and add a favourite.</p>';
@@ -270,7 +309,7 @@ function renderCart() {
 function getCartTotals() {
   const subtotal = state.cart.reduce((sum, entry) => {
     const product = products.find((item) => item.id === entry.id);
-    return sum + product.price * entry.quantity;
+    return sum + getSizePrice(product, entry.size) * entry.quantity;
   }, 0);
   const discount = state.couponApplied ? Math.round(subtotal * 0.1) : 0;
   return { subtotal, discount, total: subtotal - discount };
@@ -312,7 +351,8 @@ function renderCheckoutReview() {
   const totals = getCartTotals();
   const items = state.cart.map((entry) => {
     const product = products.find((item) => item.id === entry.id);
-    return `<li><span>${escapeHtml(product.name)} <small>${entry.quantity} × ${money(product.price)}</small></span><strong>${money(product.price * entry.quantity)}</strong></li>`;
+    const unitPrice = getSizePrice(product, entry.size);
+    return `<li><span>${escapeHtml(product.name)} <small>${entry.quantity} × ${money(unitPrice)}</small></span><strong>${money(unitPrice * entry.quantity)}</strong></li>`;
   }).join('');
 
   $('#checkout-review').innerHTML = `
@@ -345,22 +385,37 @@ function placeDemoOrder() {
   if (!state.cart.length) return;
   const totals = getCartTotals();
   const orderId = `AR-${Date.now().toString(36).toUpperCase()}`;
+  const placedAt = new Date().toISOString();
   const order = {
     id: orderId,
-    placedAt: new Date().toISOString(),
+    placedAt,
     status: 'Demo order placed',
     subtotal: totals.subtotal,
     discount: totals.discount,
     total: totals.total,
+    tracking: {
+      number: `ARTRK-${orderId.slice(3)}`,
+      events: [
+        { label: 'Order placed', at: placedAt },
+        { label: 'Preparing order', at: null },
+        { label: 'Handed to carrier', at: null },
+        { label: 'Out for delivery', at: null },
+        { label: 'Delivered', at: null }
+      ]
+    },
     items: state.cart.map((entry) => {
       const product = products.find((item) => item.id === entry.id);
       return {
         id: product.id,
         name: product.name,
+        brand: product.brand,
+        category: product.category,
+        description: product.description,
+        image: product.galleryImages && product.galleryImages.length ? product.galleryImages[0].src : product.image,
         size: entry.size,
         color: entry.color,
         quantity: entry.quantity,
-        unitPrice: product.price
+        unitPrice: getSizePrice(product, entry.size)
       };
     })
   };
