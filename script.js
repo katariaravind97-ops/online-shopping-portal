@@ -134,7 +134,8 @@ const state = {
   cart: loadCart(),
   favorites: new Set(loadFavorites()),
   couponApplied: false,
-  toastTimer: 0
+  toastTimer: 0,
+  checkoutAddress: null
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -217,22 +218,29 @@ function renderProducts() {
   });
 
   const sort = $('#sort-products').value;
+  if (sort === 'popular') visible = [...visible].sort((a, b) => b.reviews - a.reviews);
   if (sort === 'price-low') visible = [...visible].sort((a, b) => a.price - b.price);
   if (sort === 'price-high') visible = [...visible].sort((a, b) => b.price - a.price);
   if (sort === 'rating') visible = [...visible].sort((a, b) => b.rating - a.rating);
+  if (sort === 'discount') {
+    visible = [...visible].sort((a, b) => (
+      (1 - b.price / b.originalPrice) - (1 - a.price / a.originalPrice)
+    ));
+  }
 
   $('#product-grid').innerHTML = visible.map(productCard).join('');
   $('#empty-state').hidden = visible.length > 0;
   $('#items-count').textContent = `${visible.length} ${visible.length === 1 ? 'item' : 'items'}`;
   $('#listing-title').textContent = state.category === 'Wishlist' ? 'Your wishlist' : state.category === 'All' ? 'Shop the collection' : `${state.category} collection`;
   $('#listing-subtitle').textContent = state.category === 'Wishlist' ? 'The pieces you saved for later.' : 'Clothing, watches and accessories chosen for everyday wear.';
-  $$('.filter-chip, .nav-tab').forEach((button) => {
+  $$('.filter-chip, .nav-tab, .mobile-nav [data-category]').forEach((button) => {
     const selected = button.dataset.category === state.category;
     button.classList.toggle('is-selected', selected && button.classList.contains('filter-chip'));
     button.classList.toggle('is-active', selected && button.classList.contains('nav-tab'));
     button.setAttribute('aria-pressed', String(selected));
   });
   $('#wishlist-count').textContent = state.favorites.size;
+  $('#mobile-filter-toggle').setAttribute('aria-expanded', String($('#filters').classList.contains('is-open')));
 }
 
 function productCard(product) {
@@ -245,16 +253,20 @@ function productCard(product) {
         <a class="product-photo-link" href="${escapeHtml(productHref)}" aria-label="View ${escapeHtml(product.name)} details">
           <img src="${product.image}" alt="${escapeHtml(product.alt)}" loading="lazy">
         </a>
-        ${product.tag ? `<span class="product-badge">${escapeHtml(product.tag)}</span>` : ''}
+        <div class="product-badges">
+          ${product.tag ? `<span class="product-badge">${escapeHtml(product.tag)}</span>` : ''}
+          ${discount ? `<span class="product-discount-badge">${discount}% off</span>` : ''}
+        </div>
         <button class="favorite-button${favorite ? ' is-favorite' : ''}" type="button" data-favorite="${product.id}" aria-label="${favorite ? 'Remove from' : 'Add to'} wishlist" aria-pressed="${favorite}">${favorite ? '♥' : '♡'}</button>
       </div>
       <div class="product-info">
-        <div class="product-title-row"><h3 class="product-name"><a href="${escapeHtml(productHref)}">${escapeHtml(product.name)}</a></h3><span class="product-rating">${product.rating.toFixed(1)}<span class="rating-star">★</span></span></div>
+        <div class="product-category-row"><span class="product-category">${escapeHtml(product.category)}</span><span class="product-brand">${escapeHtml(product.brand)}</span></div>
+        <h3 class="product-name"><a href="${escapeHtml(productHref)}">${escapeHtml(product.name)}</a></h3>
+        <div class="product-rating" aria-label="Rated ${product.rating.toFixed(1)} out of 5 from ${product.reviews} reviews"><span class="rating-star" aria-hidden="true">★</span><strong>${product.rating.toFixed(1)}</strong><span class="review-count">(${product.reviews.toLocaleString('en-IN')})</span></div>
         <p class="product-desc">${escapeHtml(product.description)}</p>
-        <div class="price-line"><span class="price-current">${money(product.price)}</span><span class="price-original">${money(product.originalPrice)}</span><span class="price-off">${discount}% off</span></div>
-        <p class="product-meta">${escapeHtml(product.brand)} · ${product.reviews.toLocaleString('en-IN')} reviews</p>
-        <p class="product-options">Sizes: ${escapeHtml(product.sizes.join(', '))}</p>
-        <div class="product-card-actions"><button class="add-button" type="button" data-add="${product.id}">Add to cart</button><a class="detail-button" href="${escapeHtml(productHref)}" aria-label="View ${escapeHtml(product.name)} details">↗</a></div>
+        <div class="price-line"><span class="price-current">${money(product.price)}</span><span class="price-original">${money(product.originalPrice)}</span></div>
+        <p class="product-options">Sizes ${escapeHtml(product.sizes.join(' · '))}</p>
+        <div class="product-card-actions"><button class="add-button" type="button" data-add="${product.id}">Add to bag <span aria-hidden="true">＋</span></button><a class="detail-button" href="${escapeHtml(productHref)}" aria-label="View ${escapeHtml(product.name)} details">↗</a></div>
       </div>
     </article>
   `;
@@ -305,7 +317,7 @@ function renderCart() {
           <span class="cart-item-total">Line total: ${money(unitPrice * entry.quantity)}</span>
         </article>`;
     }).join('')
-    : '<p class="cart-empty">Your cart is waiting for something good.<br>Browse the collection and add a favourite.</p>';
+    : '<div class="cart-empty"><span class="cart-empty-mark" aria-hidden="true">✳</span><h3>Your cart is waiting.</h3><p>Discover something you will love and make it yours.</p><button class="cart-continue-button" type="button" data-continue-shopping>Continue shopping <span aria-hidden="true">→</span></button></div>';
 
   const totals = getCartTotals();
   $('#cart-subtotal').textContent = money(totals.subtotal);
@@ -343,7 +355,7 @@ function setCheckoutStep(step) {
   $$('.checkout-step').forEach((section) => {
     section.hidden = section.dataset.checkoutStep !== step;
   });
-  const stepOrder = ['details', 'review', 'complete'];
+  const stepOrder = ['details', 'payment', 'review', 'complete'];
   const activeIndex = stepOrder.indexOf(step);
   $$('[data-progress-step]').forEach((item) => {
     const itemIndex = stepOrder.indexOf(item.dataset.progressStep);
@@ -355,10 +367,9 @@ function setCheckoutStep(step) {
 }
 
 function renderCheckoutReview() {
-  const form = $('#checkout-address-form');
-  const address = Object.fromEntries(new FormData(form).entries());
+  const address = state.checkoutAddress;
   const payment = getPaymentSelection();
-  if (!payment) return false;
+  if (!address || !payment) return false;
   const totals = getCartTotals();
   const items = state.cart.map((entry) => {
     const product = products.find((item) => item.id === entry.id);
@@ -387,7 +398,7 @@ function renderCheckoutReview() {
 }
 
 function getPaymentSelection() {
-  const formData = new FormData($('#checkout-address-form'));
+  const formData = new FormData($('#checkout-payment-form'));
   const mode = formData.get('payment-mode');
   if (mode === 'cod') {
     return { method: 'cod', label: 'Cash on delivery', status: 'Payment due on delivery · Demo only' };
@@ -405,7 +416,7 @@ function getPaymentSelection() {
 }
 
 function updatePaymentOptions() {
-  const form = $('#checkout-address-form');
+  const form = $('#checkout-payment-form');
   const onlineSelected = form.querySelector('[name="payment-mode"]:checked')?.value === 'online';
   const onlineOptions = $('#online-payment-options');
   onlineOptions.hidden = !onlineSelected;
@@ -424,6 +435,11 @@ function updatePaymentOptions() {
 function openCheckout() {
   if (!state.cart.length) return;
   closeCart();
+  state.checkoutAddress = null;
+  $('#checkout-address-form').reset();
+  $('#checkout-payment-form').reset();
+  $('#payment-validation-message').hidden = true;
+  updatePaymentOptions();
   setCheckoutStep('details');
   $('#checkout-dialog').showModal();
   document.body.classList.add('has-open-dialog');
@@ -444,12 +460,17 @@ function updateAccountControl() {
 
 function placeDemoOrder() {
   if (!state.cart.length) return;
+  if (!state.checkoutAddress) {
+    setCheckoutStep('details');
+    $('#checkout-address-form').elements.name.focus();
+    return;
+  }
   const payment = getPaymentSelection();
   if (!payment) {
-    setCheckoutStep('details');
+    setCheckoutStep('payment');
     $('#payment-validation-message').hidden = false;
     $('#payment-validation-message').textContent = 'Choose cash on delivery or online payment, then select an online method if needed.';
-    $('#checkout-address-form').querySelector('[name="payment-mode"]').focus();
+    $('#checkout-payment-form').querySelector('[name="payment-mode"]').focus();
     return;
   }
   const totals = getCartTotals();
@@ -526,11 +547,20 @@ function toggleFavorite(id) {
 
 function setCategory(category) {
   state.category = categories.includes(category) ? category : 'All';
+  $('#filters').classList.remove('is-open');
+  $('#mobile-filter-toggle').setAttribute('aria-expanded', 'false');
   renderProducts();
   $('#shop').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 document.addEventListener('click', (event) => {
+  if (event.target.closest('#empty-state-reset')) {
+    state.query = '';
+    state.category = 'All';
+    $('#global-search').value = '';
+    renderProducts();
+    return;
+  }
   const categoryButton = event.target.closest('[data-category]');
   if (categoryButton) {
     setCategory(categoryButton.dataset.category);
@@ -559,6 +589,11 @@ document.addEventListener('click', (event) => {
   if (addButton) addToCart(addButton.dataset.add);
   const favoriteButton = event.target.closest('[data-favorite]');
   if (favoriteButton) toggleFavorite(favoriteButton.dataset.favorite);
+  if (event.target.closest('[data-continue-shopping]')) {
+    closeCart();
+    $('#shop').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
   const removeButton = event.target.closest('[data-remove]');
   if (removeButton) {
     state.cart.splice(Number(removeButton.dataset.remove), 1);
@@ -614,6 +649,11 @@ document.addEventListener('click', (event) => {
 });
 
 $('#sort-products').addEventListener('change', renderProducts);
+$('#mobile-filter-toggle').addEventListener('click', () => {
+  const filters = $('#filters');
+  const isOpen = filters.classList.toggle('is-open');
+  $('#mobile-filter-toggle').setAttribute('aria-expanded', String(isOpen));
+});
 $('#coupon-form').addEventListener('submit', (event) => {
   event.preventDefault();
   const code = $('#coupon').value.trim().toUpperCase();
@@ -629,14 +669,20 @@ $('#coupon-form').addEventListener('submit', (event) => {
 });
 
 $('#checkout-button').addEventListener('click', openCheckout);
-$('#checkout-address-form').addEventListener('change', (event) => {
+$('#checkout-address-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  state.checkoutAddress = Object.fromEntries(new FormData(event.currentTarget).entries());
+  setCheckoutStep('payment');
+  $('#checkout-payment-form').querySelector('[name="payment-mode"]').focus();
+});
+$('#checkout-payment-form').addEventListener('change', (event) => {
   if (event.target.matches('[name="payment-mode"]')) {
     $('#payment-validation-message').hidden = true;
     updatePaymentOptions();
   }
   if (event.target.matches('[name="online-payment"]')) updatePaymentOptions();
 });
-$('#checkout-address-form').addEventListener('submit', (event) => {
+$('#checkout-payment-form').addEventListener('submit', (event) => {
   event.preventDefault();
   $('#payment-validation-message').hidden = true;
   if (!renderCheckoutReview()) {
@@ -646,7 +692,8 @@ $('#checkout-address-form').addEventListener('submit', (event) => {
   }
   setCheckoutStep('review');
 });
-$('#checkout-back').addEventListener('click', () => setCheckoutStep('details'));
+$('#payment-back').addEventListener('click', () => setCheckoutStep('details'));
+$('#checkout-back').addEventListener('click', () => setCheckoutStep('payment'));
 $('#checkout-place').addEventListener('click', placeDemoOrder);
 $('#checkout-close').addEventListener('click', () => $('#checkout-dialog').close());
 $('#checkout-done').addEventListener('click', () => $('#checkout-dialog').close());
