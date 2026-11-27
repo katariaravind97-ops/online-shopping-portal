@@ -58,8 +58,24 @@ function normalizeProduct(candidate) {
   }
 }
 
-function readProduct() {
-  const serializedProduct = new URLSearchParams(window.location.search).get('product');
+function readProductCatalog() {
+  try {
+    const serializedProducts = localStorage.getItem('ar-shop-products');
+    if (!serializedProducts) return [];
+    const candidates = JSON.parse(serializedProducts);
+    return Array.isArray(candidates) ? candidates.map(normalizeProduct).filter(Boolean) : [];
+  } catch (error) {
+    console.error('Could not load the product catalog from browser storage.', error);
+    return [];
+  }
+}
+
+function readProduct(catalog) {
+  const params = new URLSearchParams(window.location.search);
+  const productId = params.get('id');
+  if (productId) return catalog.find((item) => item.id === productId) || null;
+
+  const serializedProduct = params.get('product');
   if (!serializedProduct) return null;
   try {
     return normalizeProduct(JSON.parse(serializedProduct));
@@ -68,23 +84,14 @@ function readProduct() {
   }
 }
 
-function readRelatedProducts() {
-  const serializedProducts = new URLSearchParams(window.location.search).get('related');
-  if (!serializedProducts) return [];
-  try {
-    const candidates = JSON.parse(serializedProducts);
-    return Array.isArray(candidates) ? candidates.map(normalizeProduct).filter(Boolean).slice(0, 8) : [];
-  } catch {
-    return [];
-  }
+function readRelatedProducts(product, catalog) {
+  return catalog
+    .filter((item) => item.id !== product.id && item.category === product.category)
+    .slice(0, 8);
 }
 
-function productDetailHref(product, relatedProducts) {
-  const query = new URLSearchParams({
-    product: JSON.stringify(product),
-    related: JSON.stringify(relatedProducts)
-  });
-  return `product.html?${query}`;
+function productDetailHref(product) {
+  return `product.html?id=${encodeURIComponent(product.id)}`;
 }
 
 function renderProduct(product, relatedProducts) {
@@ -104,8 +111,7 @@ function renderProduct(product, relatedProducts) {
   const relatedItems = relatedProducts
     .filter((item) => item.id !== product.id && item.category === product.category)
     .map((item) => {
-      const siblingProducts = [product, ...relatedProducts].filter((sibling) => sibling.id !== item.id).slice(0, 8);
-      const href = productDetailHref(item, siblingProducts);
+      const href = productDetailHref(item);
       return `
         <a class="related-product-card" href="${escapeHtml(href)}">
           <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.alt)}" loading="lazy">
@@ -277,9 +283,22 @@ function enableCart(product) {
   });
 }
 
-const product = readProduct();
+function enableBackNavigation() {
+  const backLink = document.querySelector('.product-back-link');
+  if (!document.referrer || new URL(document.referrer).origin !== window.location.origin) return;
+  backLink.lastChild.textContent = ' Back to previous page';
+  backLink.addEventListener('click', (event) => {
+    event.preventDefault();
+    window.history.back();
+  });
+}
+
+enableBackNavigation();
+
+const productCatalog = readProductCatalog();
+const product = readProduct(productCatalog);
 if (product) {
-  const relatedProducts = readRelatedProducts();
+  const relatedProducts = readRelatedProducts(product, productCatalog);
   const productContent = document.querySelector('#product-content');
   productContent.hidden = false;
   renderProduct(product, relatedProducts);

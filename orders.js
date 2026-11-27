@@ -52,6 +52,13 @@ function isValidOrder(order) {
     order.discount <= order.subtotal &&
     Number.isInteger(order.total) &&
     order.total === order.subtotal - order.discount &&
+    (order.payment === undefined || (
+      order.payment &&
+      typeof order.payment === 'object' &&
+      ['cod', 'upi', 'card'].includes(order.payment.method) &&
+      typeof order.payment.status === 'string' &&
+      order.payment.status.length <= 120
+    )) &&
     Array.isArray(order.items) &&
     order.items.length > 0 &&
     order.items.every((item) => (
@@ -118,6 +125,10 @@ function renderOrder(order, index) {
   const discountLine = order.discount
     ? `<div class="order-discount"><span>Coupon savings</span><strong>−${money(order.discount)}</strong></div>`
     : '';
+  const paymentLabels = { cod: 'Cash on delivery', upi: 'UPI', card: 'Credit card' };
+  const paymentLine = order.payment
+    ? `<div class="order-payment"><span>Payment · ${escapeHtml(paymentLabels[order.payment.method])}</span><strong>${escapeHtml(order.payment.status)}</strong></div>`
+    : '';
 
   return `
     <article class="order-card" aria-labelledby="order-${index}-id">
@@ -135,6 +146,7 @@ function renderOrder(order, index) {
           <div><span>Subtotal</span><strong>${money(order.subtotal)}</strong></div>
           ${discountLine}
           <div><span>Delivery</span><strong>Free</strong></div>
+          ${paymentLine}
           <div class="order-total"><strong>Total</strong><strong>${money(order.total)}</strong></div>
         </div>
       </div>

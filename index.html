@@ -30,7 +30,7 @@
       <div class="header-actions">
         <button class="wishlist-open" id="wishlist-open" type="button" aria-label="Show wishlist">♡ <span>Wishlist</span> <b id="wishlist-count">0</b></button>
         <a class="orders-button" href="orders.html">My orders</a>
-        <a class="account-button" href="login.html">Sign in</a>
+        <button class="account-button" id="account-button" type="button">Sign in</button>
         <button class="cart-button" id="cart-open" type="button" aria-label="Open shopping cart"><span aria-hidden="true">▱</span> Cart <b class="cart-count" aria-live="polite">0</b></button>
       </div>
     </header>
@@ -61,6 +61,22 @@
           <div class="hero-note"><span>AR STYLE NOTES</span><strong>Good looks.<br>No overthinking.</strong><small>Pieces for your everyday.</small></div>
           <span class="hero-sticker" aria-hidden="true">MADE<br>TO MOVE</span>
         </div>
+      </section>
+
+      <section class="editorial-strip content-wrap" aria-label="Curated shopping edits">
+        <button class="editorial-card editorial-card-main" data-category="Shirts" type="button">
+          <span class="editorial-index">01</span>
+          <span class="editorial-copy"><small>THE WEEKDAY EDIT</small><strong>Easy pieces,<br>serious style.</strong><em>Explore shirts <span>→</span></em></span>
+        </button>
+        <button class="editorial-card" data-category="Watches" type="button">
+          <span class="editorial-index">02</span>
+          <span class="editorial-copy"><small>ON THE CLOCK</small><strong>Time, dressed well.</strong><em>Shop watches <span>→</span></em></span>
+          <img src="https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=700&q=82" alt="" aria-hidden="true" loading="lazy">
+        </button>
+        <button class="editorial-card" data-category="Accessories" type="button">
+          <span class="editorial-index">03</span>
+          <span class="editorial-copy"><small>THE FINISHING TOUCH</small><strong>Details change<br>everything.</strong><em>View accessories <span>→</span></em></span>
+        </button>
       </section>
 
       <section class="category-shortcuts content-wrap" aria-label="Shop by category">
@@ -124,8 +140,8 @@
         <button class="close-drawer" id="checkout-close" type="button" aria-label="Close checkout">×</button>
       </div>
       <ol class="checkout-progress" aria-label="Checkout progress">
-        <li data-progress-step="details" aria-current="step"><span>1</span>Delivery</li>
-        <li data-progress-step="review"><span>2</span>Review</li>
+        <li data-progress-step="details" aria-current="step"><span>1</span>Delivery & payment</li>
+        <li data-progress-step="review"><span>2</span>Payment & review</li>
         <li data-progress-step="complete"><span>3</span>Complete</li>
       </ol>
       <section class="checkout-step" data-checkout-step="details" aria-labelledby="delivery-title">
@@ -143,6 +159,35 @@
             <label>State<input name="region" autocomplete="address-level1" required maxlength="80"></label>
             <label>PIN code<input name="postal" autocomplete="postal-code" inputmode="numeric" pattern="[0-9]{6}" title="Enter a 6-digit PIN code." required></label>
           </div>
+          <fieldset class="payment-choice-group">
+            <legend>How would you like to pay?</legend>
+            <p class="payment-choice-hint">Choose cash on delivery or pay online.</p>
+            <div class="payment-choice-options">
+              <label class="payment-choice">
+                <input type="radio" name="payment-mode" value="cod" required>
+                <span><strong>Cash on delivery</strong><small>Pay when your order arrives</small></span>
+              </label>
+              <label class="payment-choice">
+                <input type="radio" name="payment-mode" value="online" required>
+                <span><strong>Online payment</strong><small>Choose UPI or credit card</small></span>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset class="payment-choice-group online-payment-options" id="online-payment-options" hidden>
+            <legend>Select online method</legend>
+            <div class="payment-choice-options">
+              <label class="payment-choice">
+                <input type="radio" name="online-payment" value="upi">
+                <span><strong>UPI</strong><small>Google Pay, PhonePe, BHIM, or another UPI app</small></span>
+              </label>
+              <label class="payment-choice">
+                <input type="radio" name="online-payment" value="card">
+                <span><strong>Credit card</strong><small>Visa, Mastercard, or another supported card</small></span>
+              </label>
+            </div>
+            <p class="payment-security-note" id="payment-security-note" role="status">This demo does not process payments. Never enter card numbers, CVV, PINs, passwords, or bank credentials here. A secure payment-provider checkout must be connected to accept payment.</p>
+          </fieldset>
+          <p class="payment-validation-message" id="payment-validation-message" role="alert" hidden></p>
           <button class="checkout-button checkout-next" type="submit">Review your order <span>→</span></button>
         </form>
       </section>

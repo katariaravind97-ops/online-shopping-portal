@@ -146,12 +146,8 @@ function getSizePrice(product, size) {
   return product.price + Math.max(0, product.sizes.indexOf(size)) * sizePriceStep;
 }
 
-function productDetailHref(product, relatedProducts) {
-  const query = new URLSearchParams({
-    product: JSON.stringify(product),
-    related: JSON.stringify(relatedProducts)
-  });
-  return `product.html?${query}`;
+function productDetailHref(product) {
+  return `product.html?id=${encodeURIComponent(product.id)}`;
 }
 
 function readStorage(key, fallback) {
@@ -174,7 +170,17 @@ function saveStorage(key, value) {
 function loadCart() {
   const saved = readStorage('ar-shop-cart', []);
   if (!Array.isArray(saved)) return [];
-  return saved.filter((item) => item && products.some((product) => product.id === item.id) && Number.isInteger(item.quantity) && item.quantity > 0);
+  return saved.filter((item) => {
+    if (!item || typeof item !== 'object') return false;
+    const product = products.find((candidate) => candidate.id === item.id);
+    return Boolean(
+      product &&
+      product.sizes.includes(item.size) &&
+      product.colors.includes(item.color) &&
+      Number.isInteger(item.quantity) &&
+      item.quantity > 0
+    );
+  });
 }
 
 function loadFavorites() {
@@ -194,6 +200,12 @@ function showToast(message) {
   toast.classList.add('is-visible');
   window.clearTimeout(state.toastTimer);
   state.toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 2600);
+}
+
+try {
+  localStorage.setItem('ar-shop-products', JSON.stringify(products));
+} catch {
+  showToast('Related products could not be saved in browser storage.');
 }
 
 function renderProducts() {
@@ -226,10 +238,7 @@ function renderProducts() {
 function productCard(product) {
   const favorite = state.favorites.has(product.id);
   const discount = Math.max(0, Math.round((1 - product.price / product.originalPrice) * 100));
-  const relatedProducts = products
-    .filter((item) => item.category === product.category && item.id !== product.id)
-    .slice(0, 8);
-  const productHref = productDetailHref(product, relatedProducts);
+  const productHref = productDetailHref(product);
   return `
     <article class="product-card">
       <div class="product-image">
@@ -348,6 +357,8 @@ function setCheckoutStep(step) {
 function renderCheckoutReview() {
   const form = $('#checkout-address-form');
   const address = Object.fromEntries(new FormData(form).entries());
+  const payment = getPaymentSelection();
+  if (!payment) return false;
   const totals = getCartTotals();
   const items = state.cart.map((entry) => {
     const product = products.find((item) => item.id === entry.id);
@@ -369,8 +380,45 @@ function renderCheckoutReview() {
       ${totals.discount ? `<div class="checkout-review-discount"><span>Coupon savings</span><span>−${money(totals.discount)}</span></div>` : ''}
       <div><span>Delivery</span><span>Free</span></div>
       <div class="checkout-review-grand-total"><strong>Total</strong><strong>${money(totals.total)}</strong></div>
-      <p>Payment: No payment collected (demo)</p>
+      <div class="checkout-payment-summary"><strong>Payment method</strong><span>${escapeHtml(payment.label)}</span></div>
+      <p>${escapeHtml(payment.status)}</p>
     </div>`;
+  return true;
+}
+
+function getPaymentSelection() {
+  const formData = new FormData($('#checkout-address-form'));
+  const mode = formData.get('payment-mode');
+  if (mode === 'cod') {
+    return { method: 'cod', label: 'Cash on delivery', status: 'Payment due on delivery · Demo only' };
+  }
+  if (mode === 'online') {
+    const method = formData.get('online-payment');
+    if (method === 'upi') {
+      return { method: 'upi', label: 'UPI', status: 'Online payment not processed · Demo only' };
+    }
+    if (method === 'card') {
+      return { method: 'card', label: 'Credit card', status: 'Card payment not processed · Secure provider required' };
+    }
+  }
+  return null;
+}
+
+function updatePaymentOptions() {
+  const form = $('#checkout-address-form');
+  const onlineSelected = form.querySelector('[name="payment-mode"]:checked')?.value === 'online';
+  const onlineOptions = $('#online-payment-options');
+  onlineOptions.hidden = !onlineSelected;
+  onlineOptions.querySelectorAll('[name="online-payment"]').forEach((input) => {
+    input.required = onlineSelected;
+    if (!onlineSelected) input.checked = false;
+  });
+
+  const selectedMethod = form.querySelector('[name="online-payment"]:checked')?.value;
+  const securityNote = $('#payment-security-note');
+  securityNote.textContent = selectedMethod === 'card'
+    ? 'Credit card selected. This demo cannot safely collect card or bank details. Never enter card numbers, CVV, PINs, passwords, or bank credentials here; a secure payment-provider checkout must be connected.'
+    : 'This demo does not process payments. Never enter card numbers, CVV, PINs, passwords, or bank credentials here. A secure payment-provider checkout must be connected to accept payment.';
 }
 
 function openCheckout() {
@@ -378,11 +426,32 @@ function openCheckout() {
   closeCart();
   setCheckoutStep('details');
   $('#checkout-dialog').showModal();
+  document.body.classList.add('has-open-dialog');
   $('#checkout-address-form').elements.name.focus();
+}
+
+function updateAccountControl() {
+  const accountButton = $('#account-button');
+  let authenticated = false;
+  try {
+    authenticated = sessionStorage.getItem('ar-market-authenticated') === 'true';
+  } catch {
+    authenticated = false;
+  }
+  accountButton.textContent = authenticated ? 'Sign out' : 'Sign in';
+  accountButton.dataset.authenticated = String(authenticated);
 }
 
 function placeDemoOrder() {
   if (!state.cart.length) return;
+  const payment = getPaymentSelection();
+  if (!payment) {
+    setCheckoutStep('details');
+    $('#payment-validation-message').hidden = false;
+    $('#payment-validation-message').textContent = 'Choose cash on delivery or online payment, then select an online method if needed.';
+    $('#checkout-address-form').querySelector('[name="payment-mode"]').focus();
+    return;
+  }
   const totals = getCartTotals();
   const orderId = `AR-${Date.now().toString(36).toUpperCase()}`;
   const placedAt = new Date().toISOString();
@@ -393,6 +462,7 @@ function placeDemoOrder() {
     subtotal: totals.subtotal,
     discount: totals.discount,
     total: totals.total,
+    payment: { method: payment.method, status: payment.status },
     tracking: {
       number: `ARTRK-${orderId.slice(3)}`,
       events: [
@@ -423,7 +493,7 @@ function placeDemoOrder() {
   if (!persistDemoOrder(order)) return;
 
   $('#checkout-order-error').hidden = true;
-  $('#checkout-confirmation').innerHTML = `Order <strong>${orderId}</strong> has been placed for <strong>${money(totals.total)}</strong>.`;
+  $('#checkout-confirmation').innerHTML = `Demo order <strong>${orderId}</strong> has been recorded for <strong>${money(totals.total)}</strong>. ${escapeHtml(payment.status)}.`;
   state.cart = [];
   state.couponApplied = false;
   saveStorage('ar-shop-cart', state.cart);
@@ -504,6 +574,19 @@ document.addEventListener('click', (event) => {
     renderCart();
   }
   if (event.target.closest('#cart-open, #mobile-cart-open')) openCart();
+  if (event.target.closest('#account-button')) {
+    if (event.target.closest('#account-button').dataset.authenticated === 'true') {
+      try {
+        sessionStorage.removeItem('ar-market-authenticated');
+      } catch {
+        showToast('Your browser could not end the sign-in session.');
+        return;
+      }
+      window.location.assign('login.html');
+    } else {
+      window.location.assign('login.html');
+    }
+  }
   if (event.target.closest('.close-drawer, #backdrop')) closeCart();
   const notice = event.target.closest('[data-notice]');
   if (notice) showToast(notice.dataset.notice);
@@ -546,9 +629,21 @@ $('#coupon-form').addEventListener('submit', (event) => {
 });
 
 $('#checkout-button').addEventListener('click', openCheckout);
+$('#checkout-address-form').addEventListener('change', (event) => {
+  if (event.target.matches('[name="payment-mode"]')) {
+    $('#payment-validation-message').hidden = true;
+    updatePaymentOptions();
+  }
+  if (event.target.matches('[name="online-payment"]')) updatePaymentOptions();
+});
 $('#checkout-address-form').addEventListener('submit', (event) => {
   event.preventDefault();
-  renderCheckoutReview();
+  $('#payment-validation-message').hidden = true;
+  if (!renderCheckoutReview()) {
+    $('#payment-validation-message').hidden = false;
+    $('#payment-validation-message').textContent = 'Choose a payment option before reviewing the order.';
+    return;
+  }
   setCheckoutStep('review');
 });
 $('#checkout-back').addEventListener('click', () => setCheckoutStep('details'));
@@ -557,6 +652,7 @@ $('#checkout-close').addEventListener('click', () => $('#checkout-dialog').close
 $('#checkout-done').addEventListener('click', () => $('#checkout-dialog').close());
 $('#checkout-dialog').addEventListener('close', () => {
   if ($('#checkout-dialog').open) return;
+  document.body.classList.remove('has-open-dialog');
   setCheckoutStep('details');
 });
 
@@ -575,3 +671,4 @@ document.addEventListener('keydown', (event) => {
 
 renderProducts();
 renderCart();
+updateAccountControl();
